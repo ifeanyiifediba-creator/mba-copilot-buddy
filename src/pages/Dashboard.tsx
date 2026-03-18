@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap, Pencil, Linkedin, Github, ArrowRight } from "lucide-react";
+import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap, Pencil, Linkedin, Github, ArrowRight, CalendarCheck } from "lucide-react";
 import { format, differenceInDays, isPast, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -308,6 +308,40 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Resume Coaching Card */}
+      <div className="rounded-2xl weekly-goal-card">
+        <div className="p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-1">Resume Coaching</h3>
+          <p className="text-sm text-slate-500 mb-4">Book a monthly session with a resume coach to sharpen your materials</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-white/70 rounded-xl p-4 border border-slate-200">
+              <p className="font-semibold text-slate-800 text-sm">📋 45-min Resume Review</p>
+              <p className="text-xs text-slate-500 mt-1">1-on-1 session with an experienced recruiter to review your resume, cover letter, and LinkedIn</p>
+              <a
+                href="https://calendly.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium transition-colors"
+              >
+                <CalendarCheck className="h-4 w-4" /> Book a session
+              </a>
+            </div>
+            <div className="bg-white/70 rounded-xl p-4 border border-slate-200">
+              <p className="font-semibold text-slate-800 text-sm">🎯 Mock Interview Prep</p>
+              <p className="text-xs text-slate-500 mt-1">Practice behavioral and case interviews with feedback from MBA career coaches</p>
+              <a
+                href="https://calendly.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium transition-colors"
+              >
+                <CalendarCheck className="h-4 w-4" /> Book a session
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Team Section */}

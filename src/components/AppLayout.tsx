@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { GlobalSearch } from "./GlobalSearch";
+import { CoachChat } from "./CoachChat";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
@@ -29,6 +30,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
+      <CoachChat />
     </SidebarProvider>
   );
 }

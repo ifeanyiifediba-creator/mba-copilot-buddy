@@ -14,7 +14,276 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          industry: string | null
+          name: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          industry?: string | null
+          name: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          industry?: string | null
+          name?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          kind: Database["public"]["Enums"]["contact_kind"]
+          linkedin: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["contact_kind"]
+          linkedin?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["contact_kind"]
+          linkedin?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          date: string
+          follow_up_date: string | null
+          follow_up_done: boolean | null
+          id: string
+          notes: string | null
+          summary: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          date?: string
+          follow_up_date?: string | null
+          follow_up_done?: boolean | null
+          id?: string
+          notes?: string | null
+          summary?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          date?: string
+          follow_up_date?: string | null
+          follow_up_done?: boolean | null
+          id?: string
+          notes?: string | null
+          summary?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_syncs: {
+        Row: {
+          company_detected: string | null
+          confirmed: boolean | null
+          dismissed: boolean | null
+          from_email: string | null
+          gmail_message_id: string | null
+          id: string
+          role_detected: string | null
+          status_detected: string | null
+          subject: string | null
+          synced_at: string
+          user_id: string
+        }
+        Insert: {
+          company_detected?: string | null
+          confirmed?: boolean | null
+          dismissed?: boolean | null
+          from_email?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          role_detected?: string | null
+          status_detected?: string | null
+          subject?: string | null
+          synced_at?: string
+          user_id: string
+        }
+        Update: {
+          company_detected?: string | null
+          confirmed?: boolean | null
+          dismissed?: boolean | null
+          from_email?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          role_detected?: string | null
+          status_detected?: string | null
+          subject?: string | null
+          synced_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      roles: {
+        Row: {
+          auto_detected: boolean | null
+          company_id: string
+          created_at: string
+          deadline: string | null
+          id: string
+          link: string | null
+          location: string | null
+          notes: string | null
+          salary: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["role_status"]
+          title: string
+          user_id: string
+        }
+        Insert: {
+          auto_detected?: boolean | null
+          company_id: string
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          link?: string | null
+          location?: string | null
+          notes?: string | null
+          salary?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["role_status"]
+          title: string
+          user_id: string
+        }
+        Update: {
+          auto_detected?: boolean | null
+          company_id?: string
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          link?: string | null
+          location?: string | null
+          notes?: string | null
+          salary?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["role_status"]
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simplify_jobs: {
+        Row: {
+          applied_date: string | null
+          company: string | null
+          id: string
+          role_id: string | null
+          simplify_url: string | null
+          status: string | null
+          synced_at: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_date?: string | null
+          company?: string | null
+          id?: string
+          role_id?: string | null
+          simplify_url?: string | null
+          status?: string | null
+          synced_at?: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_date?: string | null
+          company?: string | null
+          id?: string
+          role_id?: string | null
+          simplify_url?: string | null
+          status?: string | null
+          synced_at?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simplify_jobs_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +292,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      contact_kind:
+        | "recruiter"
+        | "hiring_manager"
+        | "alum"
+        | "referral"
+        | "other"
+      role_status:
+        | "interested"
+        | "applied"
+        | "interviewing"
+        | "offer"
+        | "accepted"
+        | "rejected"
+        | "declined"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +432,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      contact_kind: [
+        "recruiter",
+        "hiring_manager",
+        "alum",
+        "referral",
+        "other",
+      ],
+      role_status: [
+        "interested",
+        "applied",
+        "interviewing",
+        "offer",
+        "accepted",
+        "rejected",
+        "declined",
+      ],
+    },
   },
 } as const

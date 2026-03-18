@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 export default function Dashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Weekly goal from localStorage
   const [weeklyGoal, setWeeklyGoal] = useState(() => {

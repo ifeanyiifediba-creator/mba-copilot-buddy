@@ -1,13 +1,32 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap } from "lucide-react";
-import { format, differenceInDays, isPast } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap, Flame, Settings2, Linkedin, Github } from "lucide-react";
+import { format, differenceInDays, isPast, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Weekly goal from localStorage
+  const [weeklyGoal, setWeeklyGoal] = useState(() => {
+    const saved = localStorage.getItem("weekly-app-goal");
+    return saved ? parseInt(saved) : 10;
+  });
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState(String(weeklyGoal));
+
+  const saveGoal = () => {
+    const val = Math.max(1, parseInt(goalInput) || 10);
+    setWeeklyGoal(val);
+    localStorage.setItem("weekly-app-goal", String(val));
+    setEditingGoal(false);
+  };
 
   const { data: roles = [] } = useQuery({
     queryKey: ["roles", user?.id],
@@ -56,6 +75,16 @@ export default function Dashboard() {
   const interviewing = roles.filter((r: any) => r.status === "interviewing").length;
   const offers = roles.filter((r: any) => r.status === "offer").length;
 
+  // Weekly applications count
+  const now = new Date();
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+  const appsThisWeek = roles.filter((r: any) => {
+    const created = new Date(r.created_at);
+    return isWithinInterval(created, { start: weekStart, end: weekEnd });
+  }).length;
+  const goalProgress = Math.min(appsThisWeek / weeklyGoal, 1);
+
   const upcomingDeadlines = roles
     .filter((r: any) => r.deadline && !isPast(new Date(r.deadline)))
     .sort((a: any, b: any) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
@@ -68,11 +97,72 @@ export default function Dashboard() {
     { label: "Offers", value: offers, icon: Trophy },
   ];
 
+  const firstName = user?.email?.split("@")[0] || "there";
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          Welcome, {firstName} 👋
+        </h1>
         <p className="text-muted-foreground text-sm">Your recruiting overview</p>
+      </div>
+
+      {/* Weekly Goal Tracker — Simplify-inspired bright card */}
+      <div className="rounded-2xl p-5 weekly-goal-card">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔥</span>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">
+                {appsThisWeek}/{weeklyGoal} Applications
+              </h2>
+              <p className="text-sm text-slate-500">
+                {appsThisWeek >= weeklyGoal
+                  ? "🎉 Weekly goal hit! Nice work."
+                  : `💪 ${weeklyGoal - appsThisWeek} more to hit your weekly goal!`}
+              </p>
+            </div>
+          </div>
+          {editingGoal ? (
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+                className="w-16 h-8 text-center bg-white/80 border-slate-300 text-slate-800 text-sm"
+                onKeyDown={(e) => e.key === "Enter" && saveGoal()}
+              />
+              <Button size="sm" onClick={saveGoal} className="h-8 bg-teal-500 hover:bg-teal-600 text-white text-xs">
+                Save
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setGoalInput(String(weeklyGoal)); setEditingGoal(true); }}
+              className="h-8 bg-white/60 border-slate-300 text-slate-600 hover:bg-white/80 text-xs"
+            >
+              <Settings2 className="h-3 w-3 mr-1" /> Set Goal
+            </Button>
+          )}
+        </div>
+        <div className="w-full h-3 bg-white/50 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500 ease-out"
+            style={{
+              width: `${goalProgress * 100}%`,
+              background: "linear-gradient(90deg, #2dd4bf, #14b8a6, #0d9488)",
+            }}
+          />
+        </div>
+        <div className="flex justify-end mt-1">
+          <span className="text-xs font-medium text-teal-600">
+            {appsThisWeek}/{weeklyGoal} this week
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -171,6 +261,32 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Team Section */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-foreground">Built by</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-lg font-bold text-primary-foreground">
+              E
+            </div>
+            <div>
+              <p className="text-foreground font-semibold">Emmanuel Ifeanyi</p>
+              <p className="text-sm text-muted-foreground">MBA Candidate · Full-Stack Developer</p>
+              <div className="flex gap-2 mt-1">
+                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Linkedin className="h-4 w-4" />
+                </a>
+                <a href="https://github.com" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Github className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

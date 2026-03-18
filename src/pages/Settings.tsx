@@ -12,6 +12,52 @@ import { useNavigate } from "react-router-dom";
 export default function SettingsPage() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
+  const [exporting, setExporting] = useState(false);
+
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const [{ data: roles }, { data: contacts }, { data: conversations }] = await Promise.all([
+        supabase.from("roles").select("title, status, deadline, salary, location, source, link, notes, created_at, companies(name)"),
+        supabase.from("contacts").select("name, kind, email, phone, linkedin, notes, created_at, companies(name)"),
+        supabase.from("conversations").select("date, summary, follow_up_date, follow_up_done, notes, created_at, contacts(name), companies(name)"),
+      ]);
+
+      const toCsv = (headers: string[], rows: any[][]) => {
+        const escape = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+        return [headers.map(escape).join(","), ...rows.map(r => r.map(escape).join(","))].join("\n");
+      };
+
+      const rolesCsv = toCsv(
+        ["Title", "Company", "Status", "Deadline", "Salary", "Location", "Source", "Link", "Notes", "Created"],
+        (roles || []).map((r: any) => [r.title, r.companies?.name, r.status, r.deadline, r.salary, r.location, r.source, r.link, r.notes, r.created_at])
+      );
+
+      const contactsCsv = toCsv(
+        ["Name", "Company", "Kind", "Email", "Phone", "LinkedIn", "Notes", "Created"],
+        (contacts || []).map((c: any) => [c.name, c.companies?.name, c.kind, c.email, c.phone, c.linkedin, c.notes, c.created_at])
+      );
+
+      const convCsv = toCsv(
+        ["Date", "Contact", "Company", "Summary", "Follow-up Date", "Follow-up Done", "Notes", "Created"],
+        (conversations || []).map((c: any) => [c.date, c.contacts?.name, c.companies?.name, c.summary, c.follow_up_date, c.follow_up_done, c.notes, c.created_at])
+      );
+
+      const full = `ROLES\n${rolesCsv}\n\nCONTACTS\n${contactsCsv}\n\nCONVERSATIONS\n${convCsv}`;
+      const blob = new Blob([full], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mba-copilot-export-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Data exported successfully");
+    } catch (e) {
+      toast.error("Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const { data: gmailStatus } = useQuery({
     queryKey: ["gmail-status-settings", user?.id],

@@ -12,7 +12,7 @@ import {
 const navItems = [
   { title: "Dashboard", url: "/", icon: BarChart3 },
   { title: "Pipeline", url: "/pipeline", icon: Target },
-  { title: "Gmail Sync", url: "/gmail-sync", icon: Mail },
+  
   { title: "Simplify", url: "/simplify", icon: Zap },
   { title: "Deadlines", url: "/deadlines", icon: Clock },
   { title: "Follow-ups", url: "/follow-ups", icon: Send },

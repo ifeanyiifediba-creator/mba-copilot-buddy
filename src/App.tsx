@@ -40,7 +40,7 @@ function ProtectedRoutes() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pipeline" element={<Pipeline />} />
-        <Route path="/gmail-sync" element={<GmailSync />} />
+        
         <Route path="/simplify" element={<SimplifyIntegration />} />
         <Route path="/deadlines" element={<Deadlines />} />
         <Route path="/follow-ups" element={<FollowUps />} />

@@ -140,8 +140,9 @@ export default function SettingsPage() {
       <Card className="bg-card border-border">
         <CardHeader><CardTitle className="text-foreground text-sm">Export Data</CardTitle></CardHeader>
         <CardContent>
-          <Button variant="outline" className="border-border text-foreground">
-            <Download className="mr-2 h-4 w-4" /> Export as CSV
+          <Button variant="outline" className="border-border text-foreground" onClick={exportCSV} disabled={exporting}>
+            {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            {exporting ? "Exporting..." : "Export as CSV"}
           </Button>
         </CardContent>
       </Card>

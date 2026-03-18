@@ -70,20 +70,6 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  const { data: emailSyncs = [] } = useQuery({
-    queryKey: ["recent-detections", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("email_syncs")
-        .select("*")
-        .eq("dismissed", false)
-        .eq("confirmed", false)
-        .order("synced_at", { ascending: false })
-        .limit(5);
-      return data || [];
-    },
-    enabled: !!user,
-  });
 
   const totalRoles = roles.length;
   const applied = roles.filter((r: any) => r.status === "applied").length;

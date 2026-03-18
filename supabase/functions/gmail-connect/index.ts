@@ -9,6 +9,21 @@ const corsHeaders = {
 const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET");
 
+async function getUserId(req: Request) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return null;
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  return user.id;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,7 +33,7 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
-    // Step 1: Generate OAuth URL and redirect
+    // Step 1: Generate OAuth URL
     if (action === "authorize") {
       if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
         return new Response(
@@ -26,32 +41,15 @@ Deno.serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
 
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
-
-      const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) {
+      const userId = await getUserId(req);
+      if (!userId) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
       const redirectUri = url.searchParams.get("redirect_uri") || url.origin + "/functions/v1/gmail-connect?action=callback";
-      const state = claimsData.claims.sub; // user_id as state
-
       const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
       googleAuthUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID);
       googleAuthUrl.searchParams.set("redirect_uri", redirectUri);
@@ -59,14 +57,14 @@ Deno.serve(async (req) => {
       googleAuthUrl.searchParams.set("scope", "https://www.googleapis.com/auth/gmail.readonly openid email");
       googleAuthUrl.searchParams.set("access_type", "offline");
       googleAuthUrl.searchParams.set("prompt", "consent");
-      googleAuthUrl.searchParams.set("state", state);
+      googleAuthUrl.searchParams.set("state", userId);
 
       return new Response(JSON.stringify({ url: googleAuthUrl.toString() }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Step 2: Handle OAuth callback - exchange code for tokens
+    // Step 2: Handle OAuth callback
     if (action === "callback") {
       if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
         return new Response("Google OAuth credentials not configured", { status: 500, headers: corsHeaders });
@@ -78,10 +76,8 @@ Deno.serve(async (req) => {
         return new Response("Missing code or state", { status: 400, headers: corsHeaders });
       }
 
-      // Determine the callback URI (must match what was used in authorize)
       const redirectUri = `${url.origin}/functions/v1/gmail-connect?action=callback`;
 
-      // Exchange code for tokens
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -95,16 +91,13 @@ Deno.serve(async (req) => {
       });
 
       const tokenData = await tokenResponse.json();
-
       if (!tokenResponse.ok) {
         console.error("Token exchange failed:", tokenData);
         return new Response(`Token exchange failed: ${JSON.stringify(tokenData)}`, {
-          status: 400,
-          headers: corsHeaders,
+          status: 400, headers: corsHeaders,
         });
       }
 
-      // Get user email from Google
       let email = "";
       try {
         const profileRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -112,11 +105,8 @@ Deno.serve(async (req) => {
         });
         const profile = await profileRes.json();
         email = profile.email || "";
-      } catch {
-        // Email is optional
-      }
+      } catch { /* optional */ }
 
-      // Store tokens using service role
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -126,24 +116,20 @@ Deno.serve(async (req) => {
 
       const { error: upsertError } = await supabaseAdmin
         .from("gmail_tokens")
-        .upsert(
-          {
-            user_id: userId,
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token || null,
-            token_expires_at: expiresAt,
-            email,
-            connected_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
+        .upsert({
+          user_id: userId,
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token || null,
+          token_expires_at: expiresAt,
+          email,
+          connected_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
 
       if (upsertError) {
         console.error("Token storage failed:", upsertError);
         return new Response("Failed to store tokens", { status: 500, headers: corsHeaders });
       }
 
-      // Redirect back to the app
       const appUrl = Deno.env.get("APP_URL") || "https://id-preview--fkvpogbxobjodlsofqzz.lovable.app";
       return new Response(null, {
         status: 302,
@@ -153,33 +139,22 @@ Deno.serve(async (req) => {
 
     // Step 3: Check connection status
     if (action === "status") {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
+      const userId = await getUserId(req);
+      if (!userId) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      const supabase = createClient(
+      const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } }
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
 
-      const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const { data: gmailToken } = await supabase
+      const { data: gmailToken } = await supabaseAdmin
         .from("gmail_tokens")
         .select("email, connected_at, last_sync_at")
-        .eq("user_id", claimsData.claims.sub)
+        .eq("user_id", userId)
         .single();
 
       return new Response(
@@ -190,30 +165,19 @@ Deno.serve(async (req) => {
 
     // Step 4: Disconnect Gmail
     if (action === "disconnect") {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
+      const userId = await getUserId(req);
+      if (!userId) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      const supabase = createClient(
+      const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } }
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
 
-      const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      await supabase.from("gmail_tokens").delete().eq("user_id", claimsData.claims.sub);
+      await supabaseAdmin.from("gmail_tokens").delete().eq("user_id", userId);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -221,8 +185,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("gmail-connect error:", error);

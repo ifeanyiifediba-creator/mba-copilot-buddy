@@ -8,7 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Pipeline from "@/pages/Pipeline";
-import GmailSync from "@/pages/GmailSync";
+
 import SimplifyIntegration from "@/pages/SimplifyIntegration";
 import Deadlines from "@/pages/Deadlines";
 import FollowUps from "@/pages/FollowUps";

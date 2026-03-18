@@ -27,12 +27,6 @@ export default function GmailSync() {
   const { data: gmailStatus, isLoading: statusLoading } = useQuery({
     queryKey: ["gmail-status", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("gmail-connect", {
-        body: null,
-        method: "GET",
-        headers: {},
-      });
-      // Use the query param approach since functions.invoke doesn't support query params well
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gmail-connect?action=status`,
         {

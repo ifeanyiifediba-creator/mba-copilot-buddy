@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.gmail-scan]
 verify_jwt = false
+
+[functions.coach-chat]
+verify_jwt = false

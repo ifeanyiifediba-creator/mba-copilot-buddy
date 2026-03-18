@@ -328,30 +328,57 @@ export default function Dashboard() {
         <div className="p-6">
           <h3 className="text-lg font-bold text-slate-800 mb-1">Resume Coaching</h3>
           <p className="text-sm text-slate-500 mb-4">Book a monthly session with a resume coach to sharpen your materials</p>
+          
+          {/* Campus group URL config */}
+          <div className="mb-4">
+            {editingCampusUrl ? (
+              <div className="flex items-center gap-2 bg-white/70 rounded-full px-3 py-1.5 border border-slate-200">
+                <span className="text-sm text-slate-600 whitespace-nowrap">Page URL:</span>
+                <Input
+                  type="url"
+                  placeholder="https://your-campus-group-page.com"
+                  value={campusUrlInput}
+                  onChange={(e) => setCampusUrlInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveCampusUrl()}
+                  className="h-7 bg-transparent border-slate-300 text-slate-800 text-sm"
+                  autoFocus
+                />
+                <Button size="sm" onClick={saveCampusUrl} className="h-7 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-xs px-3">
+                  Save
+                </Button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setCampusUrlInput(campusUrl); setEditingCampusUrl(true); }}
+                className="flex items-center gap-1.5 bg-white/70 rounded-full px-4 py-1.5 border border-slate-200 text-sm text-slate-600 hover:bg-white/90 transition-colors"
+              >
+                {campusUrl ? "Change campus page link" : "Set your campus group page link"} <Pencil className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="bg-white/70 rounded-xl p-4 border border-slate-200">
               <p className="font-semibold text-slate-800 text-sm">📋 45-min Resume Review</p>
               <p className="text-xs text-slate-500 mt-1">1-on-1 session with an experienced recruiter to review your resume, cover letter, and LinkedIn</p>
-              <a
-                href="https://calendly.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium transition-colors"
+              <Button
+                size="sm"
+                className="mt-3 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-sm px-4 h-9"
+                onClick={() => campusUrl ? window.open(campusUrl, "_blank") : setEditingCampusUrl(true)}
               >
-                <CalendarCheck className="h-4 w-4" /> Book a session
-              </a>
+                <CalendarCheck className="h-4 w-4 mr-1.5" /> Book a session
+              </Button>
             </div>
             <div className="bg-white/70 rounded-xl p-4 border border-slate-200">
               <p className="font-semibold text-slate-800 text-sm">🎯 Mock Interview Prep</p>
               <p className="text-xs text-slate-500 mt-1">Practice behavioral and case interviews with feedback from MBA career coaches</p>
-              <a
-                href="https://calendly.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium transition-colors"
+              <Button
+                size="sm"
+                className="mt-3 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-sm px-4 h-9"
+                onClick={() => campusUrl ? window.open(campusUrl, "_blank") : setEditingCampusUrl(true)}
               >
-                <CalendarCheck className="h-4 w-4" /> Book a session
-              </a>
+                <CalendarCheck className="h-4 w-4 mr-1.5" /> Book a session
+              </Button>
             </div>
           </div>
         </div>

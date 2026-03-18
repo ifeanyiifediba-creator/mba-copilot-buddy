@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap, Pencil, Linkedin, Github, ArrowRight } from "lucide-react";
+import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap, Pencil, Linkedin, Github, ArrowRight, CalendarCheck } from "lucide-react";
 import { format, differenceInDays, isPast, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";

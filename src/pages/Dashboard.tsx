@@ -85,6 +85,12 @@ export default function Dashboard() {
     const created = new Date(r.created_at);
     return isWithinInterval(created, { start: weekStart, end: weekEnd });
   }).length;
+  const interviewsThisWeek = roles.filter((r: any) => {
+    return r.status === "interviewing" && isWithinInterval(new Date(r.created_at), { start: weekStart, end: weekEnd });
+  }).length;
+  const savedThisWeek = roles.filter((r: any) => {
+    return r.status === "interested" && isWithinInterval(new Date(r.created_at), { start: weekStart, end: weekEnd });
+  }).length;
   const goalProgress = Math.min(appsThisWeek / weeklyGoal, 1);
 
   const upcomingDeadlines = roles

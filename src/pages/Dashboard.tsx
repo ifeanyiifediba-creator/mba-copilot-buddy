@@ -23,6 +23,19 @@ export default function Dashboard() {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState(String(weeklyGoal));
 
+  // Campus group page URL from localStorage
+  const [campusUrl, setCampusUrl] = useState(() => {
+    return localStorage.getItem("campus-group-url") || "";
+  });
+  const [editingCampusUrl, setEditingCampusUrl] = useState(false);
+  const [campusUrlInput, setCampusUrlInput] = useState(campusUrl);
+
+  const saveCampusUrl = () => {
+    setCampusUrl(campusUrlInput.trim());
+    localStorage.setItem("campus-group-url", campusUrlInput.trim());
+    setEditingCampusUrl(false);
+  };
+
   const saveGoal = () => {
     const val = Math.max(1, parseInt(goalInput) || 10);
     setWeeklyGoal(val);

@@ -8,7 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Pipeline from "@/pages/Pipeline";
-import GmailSync from "@/pages/GmailSync";
+
 import SimplifyIntegration from "@/pages/SimplifyIntegration";
 import Deadlines from "@/pages/Deadlines";
 import FollowUps from "@/pages/FollowUps";
@@ -40,7 +40,7 @@ function ProtectedRoutes() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pipeline" element={<Pipeline />} />
-        <Route path="/gmail-sync" element={<GmailSync />} />
+        
         <Route path="/simplify" element={<SimplifyIntegration />} />
         <Route path="/deadlines" element={<Deadlines />} />
         <Route path="/follow-ups" element={<FollowUps />} />

@@ -68,6 +68,9 @@ Deno.serve(async (req) => {
 
     // Step 2: Handle OAuth callback - exchange code for tokens
     if (action === "callback") {
+      if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+        return new Response("Google OAuth credentials not configured", { status: 500, headers: corsHeaders });
+      }
       const code = url.searchParams.get("code");
       const userId = url.searchParams.get("state");
 

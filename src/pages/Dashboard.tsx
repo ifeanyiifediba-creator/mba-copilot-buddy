@@ -5,13 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap, Flame, Settings2, Linkedin, Github } from "lucide-react";
+import { Target, Send, Briefcase, Trophy, Clock, AlertTriangle, Zap, Pencil, Linkedin, Github, ArrowRight } from "lucide-react";
 import { format, differenceInDays, isPast, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Weekly goal from localStorage
   const [weeklyGoal, setWeeklyGoal] = useState(() => {
@@ -83,6 +85,12 @@ export default function Dashboard() {
     const created = new Date(r.created_at);
     return isWithinInterval(created, { start: weekStart, end: weekEnd });
   }).length;
+  const interviewsThisWeek = roles.filter((r: any) => {
+    return r.status === "interviewing" && isWithinInterval(new Date(r.created_at), { start: weekStart, end: weekEnd });
+  }).length;
+  const savedThisWeek = roles.filter((r: any) => {
+    return r.status === "interested" && isWithinInterval(new Date(r.created_at), { start: weekStart, end: weekEnd });
+  }).length;
   const goalProgress = Math.min(appsThisWeek / weeklyGoal, 1);
 
   const upcomingDeadlines = roles
@@ -108,60 +116,100 @@ export default function Dashboard() {
         <p className="text-muted-foreground text-sm">Your recruiting overview</p>
       </div>
 
-      {/* Weekly Goal Tracker — Simplify-inspired bright card */}
-      <div className="rounded-2xl p-5 weekly-goal-card">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🔥</span>
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">
-                {appsThisWeek}/{weeklyGoal} Applications
-              </h2>
-              <p className="text-sm text-slate-500">
-                {appsThisWeek >= weeklyGoal
-                  ? "🎉 Weekly goal hit! Nice work."
-                  : `💪 ${weeklyGoal - appsThisWeek} more to hit your weekly goal!`}
-              </p>
+      {/* Weekly Goal Tracker — Simplify-inspired */}
+      <div className="rounded-2xl weekly-goal-card">
+        <div className="grid md:grid-cols-2 divide-x divide-slate-200">
+          {/* Left: Gauge + Goal */}
+          <div className="p-6">
+            <h3 className="text-sm font-bold text-slate-700 mb-4">
+              Week of {format(weekStart, "M/d/yyyy")} - {format(weekEnd, "M/d/yyyy")}
+            </h3>
+            <div className="flex items-center gap-6">
+              {/* Circular gauge */}
+              <div className="relative w-28 h-28 shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${Math.PI * 40 * 0.75} ${Math.PI * 40 * 0.25}`}
+                    strokeDashoffset={0}
+                    transform="rotate(-225 50 50)"
+                  />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#14b8a6" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${Math.PI * 40 * 0.75 * goalProgress} ${Math.PI * 40 * (1 - 0.75 * goalProgress)}`}
+                    strokeDashoffset={0}
+                    transform="rotate(-225 50 50)"
+                    className="transition-all duration-700 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-slate-800">{appsThisWeek}</span>
+                  <span className="text-[10px] text-slate-500">jobs applied</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-slate-800">
+                  {weeklyGoal - appsThisWeek > 0 ? `${weeklyGoal - appsThisWeek} Applications Remaining!` : "🎉 Goal Complete!"}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Move jobs to "Applied" in your Pipeline to update your weekly goal progress
+                </p>
+              </div>
             </div>
-          </div>
-          {editingGoal ? (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={1}
-                value={goalInput}
-                onChange={(e) => setGoalInput(e.target.value)}
-                className="w-16 h-8 text-center bg-white/80 border-slate-300 text-slate-800 text-sm"
-                onKeyDown={(e) => e.key === "Enter" && saveGoal()}
-              />
-              <Button size="sm" onClick={saveGoal} className="h-8 bg-teal-500 hover:bg-teal-600 text-white text-xs">
-                Save
+            <div className="flex items-center gap-3 mt-4">
+              {editingGoal ? (
+                <div className="flex items-center gap-2 bg-white/70 rounded-full px-3 py-1.5 border border-slate-200">
+                  <span className="text-sm text-slate-600">Weekly goal:</span>
+                  <Input
+                    type="number" min={1} value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && saveGoal()}
+                    className="w-14 h-7 text-center bg-transparent border-slate-300 text-slate-800 text-sm p-0"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={saveGoal} className="h-7 rounded-full bg-teal-500 hover:bg-teal-600 text-white text-xs px-3">
+                    Save
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setGoalInput(String(weeklyGoal)); setEditingGoal(true); }}
+                  className="flex items-center gap-1.5 bg-white/70 rounded-full px-4 py-1.5 border border-slate-200 text-sm text-slate-600 hover:bg-white/90 transition-colors"
+                >
+                  Weekly goal: {weeklyGoal} <Pencil className="h-3 w-3" />
+                </button>
+              )}
+              <Button
+                size="sm"
+                onClick={() => navigate("/add-role")}
+                className="rounded-full bg-teal-500 hover:bg-teal-600 text-white text-sm px-4 h-8"
+              >
+                Log an application
               </Button>
             </div>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setGoalInput(String(weeklyGoal)); setEditingGoal(true); }}
-              className="h-8 bg-white/60 border-slate-300 text-slate-600 hover:bg-white/80 text-xs"
-            >
-              <Settings2 className="h-3 w-3 mr-1" /> Set Goal
-            </Button>
-          )}
-        </div>
-        <div className="w-full h-3 bg-white/50 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500 ease-out"
-            style={{
-              width: `${goalProgress * 100}%`,
-              background: "linear-gradient(90deg, #2dd4bf, #14b8a6, #0d9488)",
-            }}
-          />
-        </div>
-        <div className="flex justify-end mt-1">
-          <span className="text-xs font-medium text-teal-600">
-            {appsThisWeek}/{weeklyGoal} this week
-          </span>
+          </div>
+          {/* Right: Tracker Overview */}
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-700">Tracker Overview</h3>
+              <span className="text-xs text-slate-400">This week</span>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600 flex items-center gap-2">📝 Applications this week</span>
+                <span className="text-sm font-bold text-slate-800">{appsThisWeek}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600 flex items-center gap-2">💬 Interviews this week</span>
+                <span className="text-sm font-bold text-slate-800">{interviewsThisWeek}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600 flex items-center gap-2">❤️ Saved jobs this week</span>
+                <span className="text-sm font-bold text-slate-800">{savedThisWeek}</span>
+              </div>
+            </div>
+            <button onClick={() => navigate("/pipeline")} className="flex items-center gap-1 text-teal-600 text-sm font-medium mt-5 hover:text-teal-700 transition-colors">
+              Go to tracker <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 

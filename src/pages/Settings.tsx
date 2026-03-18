@@ -2,13 +2,62 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings as SettingsIcon, Mail, Zap, Download, CheckCircle2, XCircle } from "lucide-react";
+import { Settings as SettingsIcon, Mail, Zap, Download, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function SettingsPage() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
+  const [exporting, setExporting] = useState(false);
+
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const [{ data: roles }, { data: contacts }, { data: conversations }] = await Promise.all([
+        supabase.from("roles").select("title, status, deadline, salary, location, source, link, notes, created_at, companies(name)"),
+        supabase.from("contacts").select("name, kind, email, phone, linkedin, notes, created_at, companies(name)"),
+        supabase.from("conversations").select("date, summary, follow_up_date, follow_up_done, notes, created_at, contacts(name), companies(name)"),
+      ]);
+
+      const toCsv = (headers: string[], rows: any[][]) => {
+        const escape = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+        return [headers.map(escape).join(","), ...rows.map(r => r.map(escape).join(","))].join("\n");
+      };
+
+      const rolesCsv = toCsv(
+        ["Title", "Company", "Status", "Deadline", "Salary", "Location", "Source", "Link", "Notes", "Created"],
+        (roles || []).map((r: any) => [r.title, r.companies?.name, r.status, r.deadline, r.salary, r.location, r.source, r.link, r.notes, r.created_at])
+      );
+
+      const contactsCsv = toCsv(
+        ["Name", "Company", "Kind", "Email", "Phone", "LinkedIn", "Notes", "Created"],
+        (contacts || []).map((c: any) => [c.name, c.companies?.name, c.kind, c.email, c.phone, c.linkedin, c.notes, c.created_at])
+      );
+
+      const convCsv = toCsv(
+        ["Date", "Contact", "Company", "Summary", "Follow-up Date", "Follow-up Done", "Notes", "Created"],
+        (conversations || []).map((c: any) => [c.date, c.contacts?.name, c.companies?.name, c.summary, c.follow_up_date, c.follow_up_done, c.notes, c.created_at])
+      );
+
+      const full = `ROLES\n${rolesCsv}\n\nCONTACTS\n${contactsCsv}\n\nCONVERSATIONS\n${convCsv}`;
+      const blob = new Blob([full], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mba-copilot-export-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Data exported successfully");
+    } catch (e) {
+      toast.error("Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const { data: gmailStatus } = useQuery({
     queryKey: ["gmail-status-settings", user?.id],
@@ -91,8 +140,9 @@ export default function SettingsPage() {
       <Card className="bg-card border-border">
         <CardHeader><CardTitle className="text-foreground text-sm">Export Data</CardTitle></CardHeader>
         <CardContent>
-          <Button variant="outline" className="border-border text-foreground">
-            <Download className="mr-2 h-4 w-4" /> Export as CSV
+          <Button variant="outline" className="border-border text-foreground" onClick={exportCSV} disabled={exporting}>
+            {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            {exporting ? "Exporting..." : "Export as CSV"}
           </Button>
         </CardContent>
       </Card>

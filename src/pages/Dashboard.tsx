@@ -70,20 +70,6 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  const { data: emailSyncs = [] } = useQuery({
-    queryKey: ["recent-detections", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("email_syncs")
-        .select("*")
-        .eq("dismissed", false)
-        .eq("confirmed", false)
-        .order("synced_at", { ascending: false })
-        .limit(5);
-      return data || [];
-    },
-    enabled: !!user,
-  });
 
   const totalRoles = roles.length;
   const applied = roles.filter((r: any) => r.status === "applied").length;
@@ -301,26 +287,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Zap className="h-4 w-4 text-accent" />
-              Recently Detected
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {emailSyncs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No recent detections. Connect Gmail or Simplify to auto-detect applications.</p>
-            ) : (
-              emailSyncs.map((sync: any) => (
-                <div key={sync.id} className="text-sm">
-                  <p className="text-foreground font-medium">{sync.company_detected || "Unknown"}</p>
-                  <p className="text-xs text-muted-foreground truncate">{sync.subject}</p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Resume Coaching Card */}
